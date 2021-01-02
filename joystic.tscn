@@ -1,0 +1,122 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://dodge_assets/Mobile_UI_joystic/joystic_limit.png" type="Texture" id=2]
+[ext_resource path="res://dodge_assets/Mobile_UI_joystic/joystic_handle_normal_alternative.png" type="Texture" id=3]
+[ext_resource path="res://dodge_assets/Mobile_UI_joystic/joystic_handle_pressed_alternative.png" type="Texture" id=4]
+[ext_resource path="res://dodge_assets/Mobile_UI_joystic/joystic.gd" type="Script" id=5]
+
+[sub_resource type="VisualShaderNodeColorConstant" id=1]
+constant = Color( 0.57, 0.57, 0.57, 1 )
+
+[sub_resource type="VisualShader" id=2]
+code = "shader_type spatial;
+render_mode cull_disabled, specular_schlick_ggx, unshaded;
+
+
+
+
+void vertex() {
+// Output:0
+
+}
+
+void fragment() {
+// Color:2
+	vec3 n_out2p0 = vec3(0.570000, 0.570000, 0.570000);
+	float n_out2p1 = 1.000000;
+
+// Output:0
+	EMISSION = n_out2p0;
+
+}
+
+void light() {
+// Output:0
+
+}
+"
+modes/cull = 2
+flags/unshaded = true
+nodes/fragment/2/node = SubResource( 1 )
+nodes/fragment/2/position = Vector2( 109, 290 )
+nodes/fragment/connections = PoolIntArray( 2, 0, 0, 5 )
+
+[sub_resource type="ShaderMaterial" id=3]
+shader = SubResource( 2 )
+
+[sub_resource type="CircleShape2D" id=4]
+radius = 32.0
+
+[sub_resource type="GDScript" id=5]
+script/source = "extends TouchScreenButton
+
+# Gonkee's joystick script for Godot 3 - full tutorial https://youtu.be/uGyEP2LUFPg
+# If you use this script, I would prefer if you gave credit to me and my channel
+
+# Change these based on the size of your button and outer sprite
+var radius = Vector2(32, 32)
+var boundary = 32
+
+var ongoing_drag = -1
+
+var return_accel = 30
+
+var threshold = 15
+
+
+func _process(delta):
+	if ongoing_drag == -1:
+		var pos_difference = (Vector2(0, 0) - radius) - position
+		position += pos_difference * return_accel * delta
+
+func get_button_pos():
+	return position + radius
+
+func _input(event):
+
+#	if (
+#		event is InputEventScreenTouch
+#	):
+#		get_parent().position = event.position
+
+	if (event is InputEventScreenDrag 
+	or (event is InputEventScreenTouch 
+	and event.is_pressed())
+	):
+		var event_dist_from_centre = (event.position - get_parent().global_position).length()
+
+		if event_dist_from_centre <= boundary * global_scale.x or event.get_index() == ongoing_drag:
+			set_global_position(event.position - radius * global_scale)
+
+			if get_button_pos().length() > boundary:
+				set_position( get_button_pos().normalized() * boundary - radius)
+
+			ongoing_drag = event.get_index()
+
+	if (event is InputEventScreenTouch and 
+	!event.is_pressed() and 
+	event.get_index() == ongoing_drag
+	):
+		ongoing_drag = -1
+
+func get_value():
+	if get_button_pos().length() > threshold:
+		return get_button_pos()
+	
+	return Vector2(0, 0)
+
+	
+
+"
+
+[node name="joystic" type="Sprite"]
+material = SubResource( 3 )
+scale = Vector2( 2, 2 )
+texture = ExtResource( 2 )
+script = ExtResource( 5 )
+
+[node name="TouchScreenButton" type="TouchScreenButton" parent="."]
+normal = ExtResource( 3 )
+pressed = ExtResource( 4 )
+shape = SubResource( 4 )
+script = SubResource( 5 )
